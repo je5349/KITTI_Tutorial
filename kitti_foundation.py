@@ -611,157 +611,191 @@ class Kitti_util(Kitti):
         res, c_ = self.__velo_2_img_projection(velo_gen)
         return cam_gen, res, c_
 
+    ### additional code ###
+    def velo_projection_empty(self, h_fov=None, v_fov=None, x_range=None, y_range=None, z_range=None):
+        """ print velodyne 3D points corresponding to camera 2D image """
+
+        self.__v_fov, self.__h_fov = v_fov, h_fov
+        self.__x_range, self.__y_range, self.__z_range = x_range, y_range, z_range
+        velo_gen, cam_gen = self.velo_file, self.camera_file
+        
+        if velo_gen is None:
+            raise ValueError("Velo data is not included in this class")
+        if cam_gen is None:
+            raise ValueError("Cam data is not included in this class")
+        res, c_ = self.__velo_2_img_projection(velo_gen)
+        
+        image0 = np.ones(cam_gen.shape)*255
+        return image0, res, c_
+    ### additional code ###
+    
     def __del__(self):
         pass
  
-def print_projection_cv2(points, color, image):
-    """ project converted velodyne points into camera image """
-    hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    def print_projection_cv2(points, color, image):
+        """ project converted velodyne points into camera image """
+        hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
-    for i in range(points.shape[1]):
-        cv2.circle(hsv_image, (np.int32(points[0][i]), np.int32(points[1][i])), 2, (np.int(color[i]), 255, 255), -1)
+        for i in range(points.shape[1]):
+            cv2.circle(hsv_image, (np.int32(points[0][i]), np.int32(points[1][i])), 2, (np.int(color[i]), 255, 255), -1)
 
-    return cv2.cvtColor(hsv_image, cv2.COLOR_HSV2BGR)
+        return cv2.cvtColor(hsv_image, cv2.COLOR_HSV2BGR)
 
-def print_projection_plt(points, color, image):
-    """ project converted velodyne points into camera image """
-    hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    def print_projection_plt(points, color, image):
+        """ project converted velodyne points into camera image """
+        hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
-    for i in range(points.shape[1]):
-        cv2.circle(hsv_image, (int(points[0][i]), int(points[1][i])), 2, (int(color[i]), 255, 255), -1)
+        for i in range(points.shape[1]):
+            cv2.circle(hsv_image, (int(points[0][i]), int(points[1][i])), 2, (int(color[i]), 255, 255), -1)
 
-    return cv2.cvtColor(hsv_image, cv2.COLOR_HSV2RGB)
+        return cv2.cvtColor(hsv_image, cv2.COLOR_HSV2RGB)
 
-def pano_example1():
-    """ save one frame image about velodyne dataset converted to panoramic image  """
-    velo_path = './velodyne_points/data'
-    v_fov, h_fov = (-10.5, 2.0), (-60, 80)
-    velo = Kitti_util(frame=89, velo_path=velo_path)
+    ### additional code ###
+    def print_projection_pc(points, color, image):
+        """ project converted velodyne points into camera image """
+        #hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
-    frame = velo.velo_2_pano_frame(h_fov, v_fov, depth=False)
+        image0 = np.full(image.shape, 255, np.uint8)
+        
+        hsv_image = cv2.cvtColor(image0, cv2.COLOR_BGR2HSV)
+        
+        for i in range(points.shape[1]):
+            image1 = cv2.circle(hsv_image, (int(points[0][i]), int(points[1][i])), 2, (int(color[i]), 255, 255), -1)
 
-    cv2.imshow('panoramic result', frame)
-    cv2.waitKey(0)
+        return cv2.cvtColor(image1, cv2.COLOR_HSV2RGB)
+    ### additional code ###
+    
 
-def pano_example2():
-    """ save video about velodyne dataset converted to panoramic image  """
-    velo_path = './velodyne_points/data'
-    v_fov, h_fov = (-24.9, 2.0), (-180, 160)
+    def pano_example1():
+        """ save one frame image about velodyne dataset converted to panoramic image  """
+        velo_path = './velodyne_points/data'
+        v_fov, h_fov = (-10.5, 2.0), (-60, 80)
+        velo = Kitti_util(frame=89, velo_path=velo_path)
 
-    velo2 = Kitti_util(frame='all', velo_path=velo_path)
-    pano = velo2.velo_2_pano(h_fov, v_fov, depth=False)
+        frame = velo.velo_2_pano_frame(h_fov, v_fov, depth=False)
 
-    velo = Kitti_util(frame=0, velo_path=velo_path)
-    velo.velo_2_pano_frame(h_fov, v_fov, depth=False)
-    size = velo.surround_size
+        cv2.imshow('panoramic result', frame)
+        cv2.waitKey(0)
 
-    fourcc = cv2.VideoWriter_fourcc(*'XVID')
-    vid = cv2.VideoWriter('pano_result.avi', fourcc, 25.0, size, False)
+    def pano_example2():
+        """ save video about velodyne dataset converted to panoramic image  """
+        velo_path = './velodyne_points/data'
+        v_fov, h_fov = (-24.9, 2.0), (-180, 160)
 
-    for frame in pano:
-        vid.write(frame)
+        velo2 = Kitti_util(frame='all', velo_path=velo_path)
+        pano = velo2.velo_2_pano(h_fov, v_fov, depth=False)
 
-    print('video saved')
-    vid.release()
+        velo = Kitti_util(frame=0, velo_path=velo_path)
+        velo.velo_2_pano_frame(h_fov, v_fov, depth=False)
+        size = velo.surround_size
 
-def topview_example1():
-    """ save one frame image about velodyne dataset converted to topview image  """
-    velo_path = './velodyne_points/data'
-    x_range, y_range, z_range = (-15, 15), (-10, 10), (-2, 2)
-    velo = Kitti_util(frame=89, velo_path=velo_path)
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        vid = cv2.VideoWriter('pano_result.avi', fourcc, 25.0, size, False)
 
-    frame = velo.velo_2_topview_frame(x_range=x_range, y_range=y_range, z_range=z_range)
+        for frame in pano:
+            vid.write(frame)
 
-    cv2.imshow('panoramic result', frame)
-    cv2.waitKey(0)
+        print('video saved')
+        vid.release()
 
-def topview_example2():
-    """ save video about velodyne dataset converted to topview image  """
-    velo_path = './velodyne_points/data'
-    x_range, y_range, z_range, scale = (-20, 20), (-20, 20), (-2, 2), 10
-    size = (int((max(y_range) - min(y_range)) * scale), int((max(x_range) - min(x_range)) * scale))
+    def topview_example1():
+        """ save one frame image about velodyne dataset converted to topview image  """
+        velo_path = './velodyne_points/data'
+        x_range, y_range, z_range = (-15, 15), (-10, 10), (-2, 2)
+        velo = Kitti_util(frame=89, velo_path=velo_path)
 
-    velo2 = Kitti_util(frame='all', velo_path=velo_path)
-    topview = velo2.velo_2_topview(x_range=x_range, y_range=y_range, z_range=z_range, scale=scale)
+        frame = velo.velo_2_topview_frame(x_range=x_range, y_range=y_range, z_range=z_range)
 
-    fourcc = cv2.VideoWriter_fourcc(*'XVID')
-    vid = cv2.VideoWriter('topview_result.avi', fourcc, 25.0, size, False)
+        cv2.imshow('panoramic result', frame)
+        cv2.waitKey(0)
 
-    for frame in topview:
-        vid.write(frame)
+    def topview_example2():
+        """ save video about velodyne dataset converted to topview image  """
+        velo_path = './velodyne_points/data'
+        x_range, y_range, z_range, scale = (-20, 20), (-20, 20), (-2, 2), 10
+        size = (int((max(y_range) - min(y_range)) * scale), int((max(x_range) - min(x_range)) * scale))
 
-    print('video saved')
-    vid.release()
+        velo2 = Kitti_util(frame='all', velo_path=velo_path)
+        topview = velo2.velo_2_topview(x_range=x_range, y_range=y_range, z_range=z_range, scale=scale)
 
-def projection_example1():
-    """ save one frame about projecting velodyne points into camera image """
-    image_type = 'gray'  # 'gray' or 'color' image
-    mode = '00' if image_type == 'gray' else '02'  # image_00 = 'graye image' , image_02 = 'color image'
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        vid = cv2.VideoWriter('topview_result.avi', fourcc, 25.0, size, False)
 
-    image_path = 'image_' + mode + '/data'
-    velo_path = './velodyne_points/data'
+        for frame in topview:
+            vid.write(frame)
 
-    v_fov, h_fov = (-24.9, 2.0), (-90, 90)
+        print('video saved')
+        vid.release()
 
-    v2c_filepath = './calib_velo_to_cam.txt'
-    c2c_filepath = './calib_cam_to_cam.txt'
+    def projection_example1():
+        """ save one frame about projecting velodyne points into camera image """
+        image_type = 'gray'  # 'gray' or 'color' image
+        mode = '00' if image_type == 'gray' else '02'  # image_00 = 'graye image' , image_02 = 'color image'
 
-    res = Kitti_util(frame=89, camera_path=image_path, velo_path=velo_path, \
-                    v2c_path=v2c_filepath, c2c_path=c2c_filepath)
+        image_path = 'image_' + mode + '/data'
+        velo_path = './velodyne_points/data'
 
-    img, pnt, c_ = res.velo_projection_frame(v_fov=v_fov, h_fov=h_fov)
+        v_fov, h_fov = (-24.9, 2.0), (-90, 90)
 
-    result = print_projection_cv2(pnt, c_, img)
+        v2c_filepath = './calib_velo_to_cam.txt'
+        c2c_filepath = './calib_cam_to_cam.txt'
 
-    cv2.imshow('projection result', result)
-    cv2.waitKey(0)
+        res = Kitti_util(frame=89, camera_path=image_path, velo_path=velo_path, \
+                        v2c_path=v2c_filepath, c2c_path=c2c_filepath)
 
-def projection_example2():
-    """ save video about projecting velodyne points into camera image """
-    image_type = 'gray'  # 'gray' or 'color' image
-    mode = '00' if image_type == 'gray' else '02'  # image_00 = 'graye image' , image_02 = 'color image'
+        img, pnt, c_ = res.velo_projection_frame(v_fov=v_fov, h_fov=h_fov)
 
-    image_path = 'image_' + mode + '/data'
+        result = print_projection_cv2(pnt, c_, img)
 
-    velo_path = './velodyne_points/data'
-    v_fov, h_fov = (-24.9, 2.0), (-90, 90)
+        cv2.imshow('projection result', result)
+        cv2.waitKey(0)
 
-    v2c_filepath = './calib_velo_to_cam.txt'
-    c2c_filepath = './calib_cam_to_cam.txt'
+    def projection_example2():
+        """ save video about projecting velodyne points into camera image """
+        image_type = 'gray'  # 'gray' or 'color' image
+        mode = '00' if image_type == 'gray' else '02'  # image_00 = 'graye image' , image_02 = 'color image'
 
-    temp = Kitti(frame=0, camera_path=image_path)
-    img = temp.camera_file
-    size = (img.shape[1], img.shape[0])
+        image_path = 'image_' + mode + '/data'
 
-    """ save result video """
-    fourcc = cv2.VideoWriter_fourcc(*'XVID')
-    vid = cv2.VideoWriter('projection_result.avi', fourcc, 25.0, size)
-    test = Kitti_util(frame='all', camera_path=image_path, velo_path=velo_path, \
-                      v2c_path=v2c_filepath, c2c_path=c2c_filepath)
+        velo_path = './velodyne_points/data'
+        v_fov, h_fov = (-24.9, 2.0), (-90, 90)
 
-    res = test.velo_projection(v_fov=v_fov, h_fov=h_fov)
+        v2c_filepath = './calib_velo_to_cam.txt'
+        c2c_filepath = './calib_cam_to_cam.txt'
 
-    for frame, point, cc in res:
-        image = print_projection_cv2(point, cc, frame)
-        vid.write(image)
+        temp = Kitti(frame=0, camera_path=image_path)
+        img = temp.camera_file
+        size = (img.shape[1], img.shape[0])
 
-    print('video saved')
-    vid.release()
+        """ save result video """
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        vid = cv2.VideoWriter('projection_result.avi', fourcc, 25.0, size)
+        test = Kitti_util(frame='all', camera_path=image_path, velo_path=velo_path, \
+                          v2c_path=v2c_filepath, c2c_path=c2c_filepath)
 
-def xml_example():
+        res = test.velo_projection(v_fov=v_fov, h_fov=h_fov)
 
-    xml_path = "./tracklet_labels.xml"
-    xml_check = Kitti_util(xml_path=xml_path)
+        for frame, point, cc in res:
+            image = print_projection_cv2(point, cc, frame)
+            vid.write(image)
 
-    tracklet_, type_ = xml_check.tracklet_info
-    print(tracklet_[0])
+        print('video saved')
+        vid.release()
 
-if __name__ == "__main__":
+    def xml_example():
 
-    # pano_example1()
-    # pano_example2()
-    topview_example1()
-    # topview_example2()
-    # projection_example1()
-    # projection_example2()
+        xml_path = "./tracklet_labels.xml"
+        xml_check = Kitti_util(xml_path=xml_path)
+
+        tracklet_, type_ = xml_check.tracklet_info
+        print(tracklet_[0])
+
+        if __name__ == "__main__":
+
+            # pano_example1()
+            # pano_example2()
+            topview_example1()
+            # topview_example2()
+            # projection_example1()
+            # projection_example2()
 
